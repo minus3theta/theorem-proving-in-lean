@@ -1,3 +1,4 @@
+section ex
 open Nat
 
 theorem zero_add (n : Nat) : 0 + n = n :=
@@ -62,3 +63,95 @@ theorem append_assoc (as bs cs : List α)
 
 end List
 end Hidden
+
+theorem zero_add_1 (n : Nat) : 0 + n = n := by
+  induction n with
+  | zero => rfl
+  | succ n ih => rw [Nat.add_succ, ih]
+
+example (x : Nat) {y : Nat} (h : y > 0) : x % y < y := by
+  induction x, y using Nat.mod.inductionOn with
+  | ind x y h₁ ih =>
+    rw [Nat.mod_eq_sub_mod h₁.2]
+    exact ih h
+  | base x y h₁ =>
+    have : ¬ 0 < y \/ ¬ y ≤ x := Iff.mp (Decidable.not_and_iff_or_not ..) h₁
+    match this with
+    | Or.inl h₁ => exact absurd h h₁
+    | Or.inr h₁ =>
+      have hgt : y > x := Nat.gt_of_not_le h₁
+      rw [← Nat.mod_eq_of_lt hgt] at hgt
+      assumption
+
+theorem symm {α : Type u} {a b : α} (h : Eq a b) : Eq b a :=
+  match h with
+  | rfl => rfl
+
+theorem trans {α : Type u} {a b c : α} (h₁ : Eq a b) (h₂ : Eq b c) : Eq a c :=
+  match h₁ with
+  | rfl => match h₂ with
+    | rfl => rfl
+
+theorem congr₁ {α β : Type u} {a b : α} (f : α → β) (h : Eq a b) : Eq (f a) (f b) :=
+  match h with
+  | rfl => rfl
+end ex
+
+section
+namespace Hidden₁
+open List
+
+def length (as : List α) : Nat :=
+  match as with
+  | nil => 0
+  | cons _ as => Nat.succ $ length as
+
+def reverse (as : List α) : List α :=
+  match as with
+  | nil => nil
+  | cons a as => reverse as ++ cons a nil
+
+theorem length_append : length (s ++ t) = length s + length t := by
+  induction s with
+  | nil => simp [append_nil, length]
+  | cons _ _ ih => simp [ih, length, Nat.succ_add]
+
+theorem length_reverse : length (reverse t) = length t := by
+  induction t with
+  | nil => simp [length]
+  | cons _ _ ih => simp [ih, length, reverse, length_append]
+
+theorem reverse_append : reverse (s ++ t) = reverse t ++ reverse s := by
+  induction s with
+  | nil => simp [reverse]
+  | cons head tail ih =>
+    calc reverse (head :: tail ++ t)
+      _ = reverse (head :: (tail ++ t)) := by simp
+      _ = reverse (tail ++ t) ++ [head] := by simp [reverse]
+      _ = reverse t ++ reverse tail ++ [head] := by simp [ih]
+      _ = reverse t ++ (reverse tail ++ reverse [head]) := by simp [reverse, append_assoc]
+      _ = reverse t ++ reverse (head :: tail) := by simp [reverse]
+
+theorem reverse_reverse : reverse (reverse t) = t := by
+  induction t with
+  | nil => rfl
+  | cons x t ih => simp [ih, reverse_append, reverse]
+end Hidden₁
+end
+
+section
+inductive Expr where
+| const (n : Nat)
+| var (n : Nat)
+| plus (s : Expr) (t : Expr)
+| times (s : Expr) (t : Expr)
+
+namespace Expr
+def eval (e : Expr) (env : Nat → Nat) : Nat :=
+match e with
+| const n => n
+| var n => env n
+| plus s t => eval s env + eval t env
+| times s t => eval s env * eval t env
+end Expr
+end
