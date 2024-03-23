@@ -46,9 +46,25 @@ open Nat
   | 0, _, _ => by simp
   | succ a, b, c => by simp[left_distrib]
 
-theorem mul_assoc : ∀ a b c : Nat, mul a (mul b c) = mul (mul a b) c
+@[simp] theorem mul_assoc : ∀ a b c : Nat, mul a (mul b c) = mul (mul a b) c
   | _, _, 0 => by simp
   | a, b, succ c => by simp[mul_assoc]
+
+@[simp] theorem right_distrib : ∀ a b c : Nat, mul (add a b) c = add (mul a c) (mul b c)
+  | _, _, 0 => by simp
+  | _, _, succ _ => by simp[right_distrib]
+
+@[simp] theorem mul_comm : ∀ a b : Nat, mul a b = mul b a
+  | _, 0 => by simp
+  | a, succ b => by
+      calc mul a (succ b)
+        _ = add a (mul a b) := rfl
+        _ = add a (mul b a) := by rw[mul_comm]
+        _ = _ := by simp
+
+theorem exp_distrib : ∀ a b c : Nat, pow a (add b c) = mul (pow a b) (pow a c)
+  | _, _, 0 => by simp
+  | a, b, succ c => by simp[exp_distrib]
 
 end Hidden
 end ex1
