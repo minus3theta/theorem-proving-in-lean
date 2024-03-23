@@ -101,3 +101,35 @@ open List
 
 end Hidden
 end ex2
+
+section ex4
+
+inductive Vector (α : Type u) : Nat → Type u
+  | nil : Vector α 0
+  | cons : α → {n : Nat} → Vector α n → Vector α (n+1)
+
+open Vector
+open Nat
+namespace Vector
+
+#check Nat.noConfusionType
+
+def append : {m n o: Nat} → {h : m + n = o} → Vector α m → Vector α n → Vector α o
+  | 0, n, o, h, nil, bs => by
+      have : n = o := by rw[Nat.zero_add] at h; assumption
+      rw[this] at bs
+      exact bs
+  | succ m, n, succ o, h, cons a as, bs =>
+      have : succ m + n = succ (m + n) := by rw[Nat.succ_add]
+      have : m + n = o := by
+        rw[this] at h
+        injection h
+      let cs := cons a (append (h := this) as bs)
+      cs
+  | Nat.succ m, n, 0, h, _, _ => by
+      rw[succ_add] at h
+      contradiction
+
+end Vector
+
+end ex4
