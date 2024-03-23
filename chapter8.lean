@@ -68,3 +68,36 @@ theorem exp_distrib : ∀ a b c : Nat, pow a (add b c) = mul (pow a b) (pow a c)
 
 end Hidden
 end ex1
+
+section ex2
+namespace Hidden
+open List
+
+@[simp] def append : List α → List α → List α
+  | nil, bs => bs
+  | cons a as, bs => cons a (append as bs)
+
+@[simp] def reverse : List α → List α
+  | nil => nil
+  | cons a as => append (reverse as) [a]
+
+@[simp] theorem append_nil : ∀ xs : List α, append xs nil = xs
+  | nil => rfl
+  | cons x xs => by simp[append_nil]
+
+@[simp] theorem reverse_assoc :
+  ∀ xs ys zs : List α, append xs (append ys zs) = append (append xs ys) zs
+  | nil, _, _ => rfl
+  | x :: xs, ys, zs => by simp[reverse_assoc]
+
+@[simp] theorem reverse_append :
+  ∀ xs ys : List α, reverse (append xs ys) = append (reverse ys) (reverse xs)
+  | nil, ys => by simp
+  | x :: xs, ys => by simp[reverse_append]
+
+@[simp] theorem reverse_reverse : ∀ xs : List α, reverse (reverse xs) = xs
+  | nil => rfl
+  | cons x xs => by simp[reverse_reverse]
+
+end Hidden
+end ex2
