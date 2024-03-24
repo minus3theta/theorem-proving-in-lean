@@ -107,6 +107,7 @@ section ex4
 inductive Vector (α : Type u) : Nat → Type u
   | nil : Vector α 0
   | cons : α → {n : Nat} → Vector α n → Vector α (n+1)
+deriving Repr
 
 open Vector
 open Nat
@@ -114,7 +115,7 @@ namespace Vector
 
 #check Nat.noConfusionType
 
-def append : {m n o: Nat} → {h : m + n = o} → Vector α m → Vector α n → Vector α o
+def append : {m n o: Nat} → (m + n = o) → Vector α m → Vector α n → Vector α o
   | 0, n, o, h, nil, bs => by
       have : n = o := by rw[Nat.zero_add] at h; assumption
       rw[this] at bs
@@ -124,11 +125,21 @@ def append : {m n o: Nat} → {h : m + n = o} → Vector α m → Vector α n �
       have : m + n = o := by
         rw[this] at h
         injection h
-      let cs := cons a (append (h := this) as bs)
+      let cs := cons a (append this as bs)
       cs
   | Nat.succ m, n, 0, h, _, _ => by
       rw[succ_add] at h
       contradiction
+
+#eval append rfl (cons 1 nil) (cons 2 (cons 3 nil))
+
+#check @append
+
+def append_2 : {m n : Nat} → Vector α m → Vector α n → Vector α (m+n)
+  | _, _, as, bs => append rfl as bs
+
+#check append_2 (cons 1 nil) (cons 2 (cons 3 nil))
+#eval append_2 (cons 1 nil) (cons 2 (cons 3 nil))
 
 end Vector
 
