@@ -144,3 +144,78 @@ def append_2 : {m n : Nat} → Vector α m → Vector α n → Vector α (m+n)
 end Vector
 
 end ex4
+
+section ex5
+
+inductive Expr where
+  | const : Nat → Expr
+  | var : Nat → Expr
+  | plus : Expr → Expr → Expr
+  | times : Expr → Expr → Expr
+  deriving Repr
+
+open Expr
+
+def sampleExpr : Expr :=
+  plus (times (var 0) (const 7)) (times (const 2) (var 1))
+
+def eval (v : Nat → Nat) : Expr → Nat
+  | const n => n
+  | var n => v n
+  | plus e₁ e₂ => eval v e₁ + eval v e₂
+  | times e₁ e₂ => eval v e₁ * eval v e₂
+
+def sampleVal : Nat → Nat
+  | 0 => 5
+  | 1 => 6
+  | _ => 0
+
+#eval eval sampleVal sampleExpr
+
+def simpConst : Expr → Expr
+  | plus (const n₁) (const n₂) => const (n₁ + n₂)
+  | times (const n₁) (const n₂) => const (n₁ * n₂)
+  | e => e
+
+def fuse : Expr → Expr
+  | plus e₁ e₂ => simpConst (plus (fuse e₁) (fuse e₂))
+  | times e₁ e₂ => simpConst (times (fuse e₁) (fuse e₂))
+  | e => e
+
+theorem simpConst_eq (v : Nat → Nat)
+  : ∀ e : Expr, eval v (simpConst e) = eval v e
+  | const n => rfl
+  | var n => rfl
+  | plus (const n₁) (const n₂) => by simp[eval, simpConst]
+  | plus (var _) _ => rfl
+  | plus (plus _ _) _ => rfl
+  | plus (times _ _) _ => rfl
+  | plus (const _) (var _) => rfl
+  | plus (const _) (plus _ _) => rfl
+  | plus (const _) (times _ _) => rfl
+  | times (const n₁) (const n₂) => by simp[eval, simpConst]
+  | times (var _) _ => rfl
+  | times (plus _ _) _ => rfl
+  | times (times _ _) _ => rfl
+  | times (const _) (var _) => rfl
+  | times (const _) (plus _ _) => rfl
+  | times (const _) (times _ _) => rfl
+
+theorem fuse_eq (v : Nat → Nat)
+  : ∀ e : Expr, eval v (fuse e) = eval v e
+  | plus e₁ e₂ => by -- simp[simpConst, fuse, simpConst_eq, eval, fuse_eq]
+      calc eval v (fuse (plus e₁ e₂))
+        _ = eval v (simpConst (plus (fuse e₁) (fuse e₂))) := by simp[simpConst, fuse]
+        _ = eval v (plus (fuse e₁) (fuse e₂)) := by simp[simpConst_eq]
+        _ = eval v (fuse e₁) + eval v (fuse e₂) := by simp[fuse, eval]
+        _ = eval v e₁ + eval v e₂ := by simp[fuse_eq]
+  | times e₁ e₂ => by
+      calc eval v (fuse (times e₁ e₂))
+        _ = eval v (simpConst (times (fuse e₁) (fuse e₂))) := by simp[simpConst, fuse]
+        _ = eval v (times (fuse e₁) (fuse e₂)) := by simp[simpConst_eq]
+        _ = eval v (fuse e₁) * eval v (fuse e₂) := by simp[eval, fuse]
+        _ = eval v e₁ * eval v e₂ := by simp[fuse_eq]
+  | const _ => rfl
+  | var _ => rfl
+
+end ex5
